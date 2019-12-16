@@ -1,0 +1,519 @@
+---
+title: "AE R Code (Excluding Python Code)"
+output: html_notebook
+---
+
+```{r Data Exploration}
+library(dplyr)
+library(ggplot2)
+df_set1 <- read.csv('data/train_dataset01.csv')
+df_set2 <- read.csv('data/train_dataset02.csv')
+df_future_org <- read.csv('data/test_dataset.csv')
+
+df_set2$DATETIME <- as.POSIXct(strptime(df_set2$DATETIME, format="%Y-%m-%d %H:%M:%S"))
+df_set1$DATETIME <- as.POSIXct(strptime(df_set1$DATETIME, format="%Y-%m-%d %H:%M:%S"))
+df_future_org$DATETIME <- as.POSIXct(strptime(df_future_org$DATETIME, format="%Y-%m-%d %H:%M:%S"))
+
+df_set1$TABLE <- "Normal"
+df_set2$TABLE <- "Train"
+df_future_org$TABLE <- "Future"
+df_future_org$ATT_FLAG <- NA
+
+# Normalise and breakapart
+df_TF <- rbind(df_set1,df_set2,df_future_org)
+
+df_TF$STATUS_PU1 <- ifelse(as.character(df_TF$STATUS_PU1)=='True',1,0)
+df_TF$STATUS_PU2 <- ifelse(as.character(df_TF$STATUS_PU2)=='True',1,0)
+df_TF$STATUS_PU3 <- ifelse(as.character(df_TF$STATUS_PU3)=='True',1,0)
+df_TF$STATUS_PU4 <- ifelse(as.character(df_TF$STATUS_PU4)=='True',1,0)
+df_TF$STATUS_PU5 <- ifelse(as.character(df_TF$STATUS_PU5)=='True',1,0)
+df_TF$STATUS_PU6 <- ifelse(as.character(df_TF$STATUS_PU6)=='True',1,0)
+df_TF$STATUS_PU7 <- ifelse(as.character(df_TF$STATUS_PU7)=='True',1,0)
+df_TF$STATUS_PU8 <- ifelse(as.character(df_TF$STATUS_PU8)=='True',1,0)
+df_TF$STATUS_PU9 <- ifelse(as.character(df_TF$STATUS_PU9)=='True',1,0)
+df_TF$STATUS_PU10 <- ifelse(as.character(df_TF$STATUS_PU10)=='True',1,0)
+df_TF$STATUS_PU11 <- ifelse(as.character(df_TF$STATUS_PU11)=='True',1,0)
+df_TF$STATUS_V2 <- ifelse(as.character(df_TF$STATUS_V2)=='True',1,0)
+
+# write.csv(rbind(df_set1,df_set2,df_future_org), 'train_dataset01.csv')
+
+df_TF$LEVEL_T2 <- c(scale(df_TF$LEVEL_T2))
+df_TF$LEVEL_T3 <- c(scale(df_TF$LEVEL_T3))
+df_TF$LEVEL_T4 <- c(scale(df_TF$LEVEL_T4))
+df_TF$LEVEL_T6 <- c(scale(df_TF$LEVEL_T6))
+df_TF$LEVEL_T7 <- c(scale(df_TF$LEVEL_T7))
+
+df_TF$LEVEL_T1 <- c(scale(df_TF$LEVEL_T1))
+df_TF$LEVEL_T2 <- c(scale(df_TF$LEVEL_T2))
+df_TF$LEVEL_T3 <- c(scale(df_TF$LEVEL_T3))
+df_TF$LEVEL_T4 <- c(scale(df_TF$LEVEL_T4))
+df_TF$LEVEL_T6 <- c(scale(df_TF$LEVEL_T6))
+df_TF$LEVEL_T7 <- c(scale(df_TF$LEVEL_T7))
+
+df_TF$FLOW_PU1 <- c(scale(df_TF$FLOW_PU1))
+df_TF$FLOW_PU2 <- c(scale(df_TF$FLOW_PU2))
+df_TF$FLOW_PU3 <- c(scale(df_TF$FLOW_PU3))
+df_TF$FLOW_PU4 <- c(scale(df_TF$FLOW_PU4))
+df_TF$FLOW_PU7 <- c(scale(df_TF$FLOW_PU7))
+df_TF$FLOW_PU8 <- c(scale(df_TF$FLOW_PU8))
+df_TF$FLOW_PU10 <- c(scale(df_TF$FLOW_PU10))
+df_TF$FLOW_V2 <- c(scale(df_TF$FLOW_V2))
+
+df_TF$PRESSURE_J280 <- c(scale(df_TF$PRESSURE_J280))
+df_TF$PRESSURE_J269 <- c(scale(df_TF$PRESSURE_J269))
+df_TF$PRESSURE_J300 <- c(scale(df_TF$PRESSURE_J300))
+df_TF$PRESSURE_J256 <- c(scale(df_TF$PRESSURE_J256))
+df_TF$PRESSURE_J289 <- c(scale(df_TF$PRESSURE_J289))
+df_TF$PRESSURE_J415 <- c(scale(df_TF$PRESSURE_J415))
+df_TF$PRESSURE_J302 <- c(scale(df_TF$PRESSURE_J302))
+df_TF$PRESSURE_J306 <- c(scale(df_TF$PRESSURE_J306))
+df_TF$PRESSURE_J307 <- c(scale(df_TF$PRESSURE_J307))
+df_TF$PRESSURE_J317 <- c(scale(df_TF$PRESSURE_J317))
+df_TF$PRESSURE_J14 <- c(scale(df_TF$PRESSURE_J14))
+df_TF$PRESSURE_J422 <- c(scale(df_TF$PRESSURE_J422))
+df_TF$ATT_FLAG <- as.factor(ifelse(as.character(df_TF$ATT_FLAG)=='True',1,0))
+
+df_future_org <- df_TF[df_TF$TABLE=='Future',-46]
+df_set2 <- df_TF[df_TF$TABLE=='Train',-46]
+df_set1 <- df_TF[df_TF$TABLE=='Normal',-46]
+
+#write.csv(df_TF, 'train_dataset01.csv')
+
+# Split Datasets
+df_base <- df_set2[df_set2$DATETIME < as.POSIXct(strptime("2016-04-05", format="%Y-%m-%d")),]
+
+df_N3 <- df_set2[df_set2$DATETIME >= as.POSIXct(strptime("2016-04-05", format="%Y-%m-%d")) & df_set2$DATETIME < as.POSIXct(strptime("2016-05-01", format="%Y-%m-%d")),]
+
+df_N1 <- df_set2[df_set2$DATETIME >= as.POSIXct(strptime("2016-05-01", format="%Y-%m-%d")) & df_set2$DATETIME < as.POSIXct(strptime("2016-06-20", format="%Y-%m-%d")),]
+
+df_N2 <- df_set2[df_set2$DATETIME >= as.POSIXct(strptime("2016-06-20", format="%Y-%m-%d")),]
+
+df_N1 <- rbind(df_base,df_N1)
+df_N2 <- rbind(df_base,df_N2)
+df_N3 <- rbind(df_base,df_N3)
+
+# write.csv(rbind(df_base,df_N3),'network3Train.csv', row.names = F)
+# write.csv(rbind(df_base,df_N2),'network1Train.csv', row.names = F)
+# write.csv(rbind(df_base,df_N2),'network2Train.csv', row.names = F)
+```
+
+```{r Check for similarity between pressure values using SSE}
+# Compare J415 to Network 1's pressures
+sum((df_set1$PRESSURE_J415 - df_set1$PRESSURE_J300)^2)
+sum((df_set1$PRESSURE_J415 - df_set1$PRESSURE_J269)^2) # J269 is most similar to J415
+
+# Compare J415 to Network 3's pressures
+sum((df_set1$PRESSURE_J415 - df_set1$PRESSURE_J317)^2) # J317 is the most similar to J415
+sum((df_set1$PRESSURE_J415 - df_set1$PRESSURE_J307)^2)
+sum((df_set1$PRESSURE_J415 - df_set1$PRESSURE_J14)^2)
+sum((df_set1$PRESSURE_J415 - df_set1$PRESSURE_J306)^2)
+
+# Compare J307 to Network 2's pressures
+sum((df_set1$PRESSURE_J422 - df_set1$PRESSURE_J307)^2)
+sum((df_set1$PRESSURE_J256 - df_set1$PRESSURE_J307)^2)
+sum((df_set1$PRESSURE_J289 - df_set1$PRESSURE_J307)^2)
+sum((df_set1$PRESSURE_J415- df_set1$PRESSURE_J307)^2)
+sum((df_set1$PRESSURE_J302 - df_set1$PRESSURE_J307)^2) # J302 is the most similar to J307
+
+# Compare J317 to Network 2's pressures
+sum((df_set1$PRESSURE_J422 - df_set1$PRESSURE_J317)^2)
+sum((df_set1$PRESSURE_J256 - df_set1$PRESSURE_J317)^2)
+sum((df_set1$PRESSURE_J289 - df_set1$PRESSURE_J317)^2)
+sum((df_set1$PRESSURE_J415- df_set1$PRESSURE_J317)^2)
+sum((df_set1$PRESSURE_J302 - df_set1$PRESSURE_J317)^2) # J256 is the most similar ti J317
+
+# Compare J269 to Network 2's pressures
+sum((df_set1$PRESSURE_J256 - df_set1$PRESSURE_J269)^2)
+sum((df_set1$PRESSURE_J289 - df_set1$PRESSURE_J269)^2) # Ignore J289 as it is already paired to J300
+sum((df_set1$PRESSURE_J415 - df_set1$PRESSURE_J269)^2)
+sum((df_set1$PRESSURE_J302- df_set1$PRESSURE_J269)^2)
+sum((df_set1$PRESSURE_J422 - df_set1$PRESSURE_J269)^2) # J422 is the next most similar to J269
+
+# Compare J300 to Network 2's pressures
+sum((df_set1$PRESSURE_J422 - df_set1$PRESSURE_J300)^2)
+sum((df_set1$PRESSURE_J256 - df_set1$PRESSURE_J300)^2)
+sum((df_set1$PRESSURE_J289 - df_set1$PRESSURE_J300)^2) # J289 is the most similar to J300
+sum((df_set1$PRESSURE_J415- df_set1$PRESSURE_J300)^2)
+sum((df_set1$PRESSURE_J302 - df_set1$PRESSURE_J300)^2)
+
+# Compare J269 to Network 3's pressures
+sum((df_set1$PRESSURE_J306 - df_set1$PRESSURE_J269)^2)
+sum((df_set1$PRESSURE_J307 - df_set1$PRESSURE_J269)^2) # J307 is the most similar to J269
+sum((df_set1$PRESSURE_J317 - df_set1$PRESSURE_J269)^2)
+sum((df_set1$PRESSURE_J14 - df_set1$PRESSURE_J269)^2)
+
+# Compare J300 to Network 3's pressures
+sum((df_set1$PRESSURE_J306 - df_set1$PRESSURE_J300)^2) # J306 is the most similar to J300
+sum((df_set1$PRESSURE_J307 - df_set1$PRESSURE_J300)^2)
+sum((df_set1$PRESSURE_J317 - df_set1$PRESSURE_J300)^2)
+sum((df_set1$PRESSURE_J14- df_set1$PRESSURE_J300)^2)
+```
+
+
+```{r Build Network Future and Null datasets}
+# Network 1
+df_N1 <- df_N1 %>% dplyr::select(LEVEL_T1, FLOW_PU1, FLOW_PU2, FLOW_PU3, PRESSURE_J269, PRESSURE_J300, PRESSURE_J302, PRESSURE_J307, PRESSURE_J306, PRESSURE_J14, ATT_FLAG, DATETIME)
+
+df_futureN11 <- df_future_org %>% dplyr::select(LEVEL_T1, FLOW_PU1, FLOW_PU2, FLOW_PU3, PRESSURE_J269, PRESSURE_J300, PRESSURE_J302, PRESSURE_J307, PRESSURE_J306, PRESSURE_J14, ATT_FLAG, DATETIME)
+
+df_futureN21 <- data.frame(LEVEL_T1 = df_future_org$LEVEL_T2,
+                           FLOW_PU2 = df_future_org$FLOW_V2,
+                           PRESSURE_J269 = df_future_org$PRESSURE_J422,
+                           PRESSURE_J300 = df_future_org$PRESSURE_J289,
+                           DATETIME = df_future_org$DATETIME)
+
+df_NullN21 <- data.frame(LEVEL_T1 = df_set1$LEVEL_T2,
+                           FLOW_PU2 = df_set1$FLOW_V2,
+                           PRESSURE_J269 = df_set1$PRESSURE_J422,
+                           PRESSURE_J300 = df_set1$PRESSURE_J289,
+                           DATETIME = df_set1$DATETIME)
+
+df_futureN31 <- data.frame(LEVEL_T1 = df_future_org$LEVEL_T7,
+                           FLOW_PU2 = df_future_org$FLOW_PU10,
+                           PRESSURE_J269 = df_future_org$PRESSURE_J307,
+                           PRESSURE_J300 = df_future_org$PRESSURE_J306,
+                           DATETIME = df_future_org$DATETIME)
+
+df_NullN31 <- data.frame(LEVEL_T1 = df_set1$LEVEL_T7,
+                           FLOW_PU2 = df_set1$FLOW_PU10,
+                           PRESSURE_J269 = df_set1$PRESSURE_J307,
+                           PRESSURE_J300 = df_set1$PRESSURE_J306,
+                           DATETIME = df_set1$DATETIME)
+
+# Network 2
+df_N2 <- df_N2 %>% dplyr::select(LEVEL_T2, LEVEL_T3, LEVEL_T4, FLOW_V2, FLOW_PU4, FLOW_PU5, FLOW_PU6, FLOW_PU7, PRESSURE_J422, PRESSURE_J256, PRESSURE_J289, PRESSURE_J415, PRESSURE_J302, ATT_FLAG, DATETIME)
+
+df_futureN22 <- df_future_org %>% dplyr::select(LEVEL_T2, LEVEL_T3, LEVEL_T4, FLOW_V2, FLOW_PU4, FLOW_PU5, FLOW_PU6, FLOW_PU7, PRESSURE_J422, PRESSURE_J256, PRESSURE_J289, PRESSURE_J415, PRESSURE_J302, ATT_FLAG, DATETIME)
+
+df_futureN12 <- data.frame(LEVEL_T4 = df_future_org$LEVEL_T1,
+                          FLOW_PU6 = df_future_org$FLOW_PU2,
+                          FLOW_PU7 = df_future_org$FLOW_PU3,
+                          PRESSURE_J415 = df_future_org$PRESSURE_J269,
+                          DATETIME = df_future_org$DATETIME)
+
+df_NullN12 <- data.frame(LEVEL_T4 = df_set1$LEVEL_T1,
+                          FLOW_PU6 = df_set1$FLOW_PU2,
+                          FLOW_PU7 = df_set1$FLOW_PU3,
+                          PRESSURE_J415 = df_set1$PRESSURE_J269,
+                          DATETIME = df_set1$DATETIME)
+
+df_futureN32 <- data.frame(LEVEL_T4 = df_future_org$LEVEL_T7,
+                          FLOW_PU6 = df_future_org$FLOW_PU11,
+                          FLOW_PU7 = df_future_org$FLOW_PU10,
+                          PRESSURE_J415 = df_future_org$PRESSURE_J317,
+                          DATETIME = df_future_org$DATETIME)
+
+df_NullN32 <- data.frame(LEVEL_T4 = df_set1$LEVEL_T7,
+                          FLOW_PU6 = df_set1$FLOW_PU11,
+                          FLOW_PU7 = df_set1$FLOW_PU10,
+                          PRESSURE_J415 = df_set1$PRESSURE_J317,
+                          DATETIME = df_set1$DATETIME)
+
+# Cannot predict using T5 because T5 has a different behaviour from the rest of the sensors
+
+# Network 3
+df_N3 <- df_N3 %>% dplyr::select(LEVEL_T7, FLOW_PU10, FLOW_PU11, PRESSURE_J306, PRESSURE_J307, PRESSURE_J317, PRESSURE_J14, ATT_FLAG, DATETIME)
+
+df_futureN33 <- df_future_org %>% dplyr::select(LEVEL_T7, FLOW_PU10, FLOW_PU11, PRESSURE_J306, PRESSURE_J307, PRESSURE_J317, PRESSURE_J14, ATT_FLAG, DATETIME)
+
+df_futureN13 <- data.frame(LEVEL_T7 = df_future_org$LEVEL_T1,
+                           FLOW_PU10 = df_future_org$FLOW_PU2,
+                           FLOW_PU11 = df_future_org$FLOW_PU3,
+                           PRESSURE_J307 = df_future_org$PRESSURE_J300,
+                           PRESSURE_J317 = df_future_org$PRESSURE_J269,
+                           DATETIME = df_future_org$DATETIME)
+
+df_NullN13 <- data.frame(LEVEL_T7 = df_set1$LEVEL_T1,
+                           FLOW_PU10 = df_set1$FLOW_PU2,
+                           FLOW_PU11 = df_set1$FLOW_PU3,
+                           PRESSURE_J307 = df_set1$PRESSURE_J300,
+                           PRESSURE_J317 = df_set1$PRESSURE_J269,
+                           DATETIME = df_set1$DATETIME)
+
+df_futureN23 <- data.frame(LEVEL_T7 = df_future_org$LEVEL_T3, # Match base on similarity of behaviour across network 2 and 3
+                           FLOW_PU10 = df_future_org$FLOW_PU4,
+                           FLOW_PU11 = df_future_org$FLOW_PU5,
+                           PRESSURE_J307 = df_future_org$PRESSURE_J302,
+                           PRESSURE_J317 = df_future_org$PRESSURE_J256,
+                           DATETIME = df_future_org$DATETIME)
+
+df_NullN23 <- data.frame(LEVEL_T7 = df_set1$LEVEL_T3, # Match base on similarity of behaviour across network 2 and 3
+                           FLOW_PU10 = df_set1$FLOW_PU4,
+                           FLOW_PU11 = df_set1$FLOW_PU5,
+                           PRESSURE_J307 = df_set1$PRESSURE_J302,
+                           PRESSURE_J317 = df_set1$PRESSURE_J256,
+                           DATETIME = df_set1$DATETIME)
+```
+
+
+```{r Ensemble Functions}
+library(caTools)
+library(randomForest)
+library(xgboost)
+library(e1071)
+library(class)
+library(caret)
+library(ROCR)
+
+# F1 Score Function
+f1.Score <- function(cm){
+  p <- cm[2,2]/sum(cm[,2])
+  r <- cm[2,2]/sum(cm[2,])
+  a <-(cm[1,1]+cm[2,2])/sum(cm)
+  f1 <- 2*p*r/(p+r)
+  #print(paste('Accuracy:',a))
+  #print(paste('F1 Score:',f1))
+  return(f1)
+}
+
+ensembleTrain <- function(df_N,vb){
+  set.seed(1)
+  library(caret)
+  numFolds = 5
+  folds = createFolds(df_N$ATT_FLAG, k = numFolds)
+  chosenFold = folds[[sample(1:numFolds, 1)]]
+  df_train = df_N[-chosenFold,]
+  df_test = df_N[chosenFold,]
+  
+  idx <- which(colnames(df_N) %in% vb)
+  v <- as.formula(paste('ATT_FLAG~',paste(vb,collapse = '+')))
+  
+  # Random Forest
+  # Grid Search over k-fold cross CV for the best node size that optimises F1 value
+  nodeSizeOptions = c(10,15,20,50)
+  nodeSizeOpt = nodeSizeOptions[which.max(sapply(nodeSizeOptions, function(z) 
+    mean(sapply(folds, function(x){
+    cl1 = randomForest(formula = v, data = df_N[-x,], ntree = 100, nodesize = z)
+    y_pred1 = predict(cl1, newdata = df_N[x,])
+    cm1 = table(df_N[x,]$ATT_FLAG, y_pred1)
+    return(f1.Score(cm1))}))))]
+  
+  cl1 = randomForest(formula = v, data = df_train, ntree = 100, nodesize = nodeSizeOpt)
+  y_pred1 = predict(cl1, newdata = df_test)
+  cm1 = table(df_test$ATT_FLAG, y_pred1)
+  print(cm1)
+  print(f1.Score(cm1))
+  
+  # XGBoost
+  # Optimise lambda regularisation over k-fold F1 metric
+  lambdaOptions = c(1,5,10,20)
+  stats <- sapply(lambdaOptions, function(z)
+  rowMeans(sapply(folds, function(x){
+    cl3 = xgboost(data = as.matrix(df_N[-x,idx]),
+                  label = as.numeric(as.character(df_N[-x,]$ATT_FLAG)),
+                  lambda = z,
+                  gamma = 1,
+                  max.depth = 5,
+                  nrounds = 20)
+    prob_pred3 = predict(cl3, newdata = as.matrix(df_N[x,idx]))
+    ROCRpred <- prediction(prob_pred3, df_N[x,]$ATT_FLAG)
+    ROCRperf <- performance(ROCRpred,x.measure="prec",measure="rec")
+    f1 <- max(2*c(ROCRperf@x.values)[[1]]*c(ROCRperf@y.values)[[1]]/(c(ROCRperf@x.values)[[1]]+c(ROCRperf@y.values)[[1]]), na.rm = T)
+    cutOff <-ROCRpred@cutoffs[[1]][which.max(2*c(ROCRperf@x.values)[[1]]*c(ROCRperf@y.values)[[1]]/(c(ROCRperf@x.values)[[1]]+c(ROCRperf@y.values)[[1]]))]
+    return(c(f1,cutOff))
+  })))
+
+  lambdaOpt <- lambdaOptions[which.max(stats[1,])]
+  optCutOffcl3 <- stats[2,which.max(stats[1,])]
+  
+  cl3 = xgboost(data = as.matrix(df_train[idx]),
+                label = as.numeric(as.character(df_train$ATT_FLAG)),
+                max.depth = 5,
+                lambda = lambdaOpt,
+                gamma = 1,
+                nrounds = 20)
+  prob_pred3 = predict(cl3, newdata = as.matrix(df_test[idx]))
+  y_pred3 = ifelse(prob_pred3 >= optCutOffcl3,1,0)
+  cm3 = table(df_test$ATT_FLAG, y_pred3)
+  print(cm3)
+  print(f1.Score(cm3))
+  
+  # SVM
+  gammaOptions = c(0.01,0.1,0.5,0.8)
+  gammaOpt = gammaOptions[which.max(sapply(gammaOptions, function(z) 
+    mean(sapply(folds, function(x){
+    cl4 = svm(formula = v, data = df_N[-x,], type = 'C-classification', kernel = 'radial', gamma = z)
+    y_pred4 = predict(cl4, newdata = df_N[x,idx])
+    cm4 = table(df_N[x,]$ATT_FLAG, y_pred4)
+    return(f1.Score(cm4))}))))]
+  
+  cl4 = svm(formula = v, data = df_train, type = 'C-classification', kernel = 'radial', gamma = gammaOpt)
+  y_pred4 = predict(cl4, newdata = df_test[idx])
+  cm4 = table(df_test$ATT_FLAG, y_pred4)
+  print(cm4)
+  print(f1.Score(cm4))
+  
+  # KNN with PCA
+  kOptions <- c(5,8,10,12)
+  kOpt = kOptions[which.max(sapply(kOptions, function(z)
+    mean(sapply(folds, function(x){
+    pca <- prcomp(df_N[-x,idx])
+    y_pred5 = knn(train = predict(pca, df_N[-x,idx])[,1:3],
+                 test = predict(pca, df_N[x,idx])[,1:3],
+                 cl = df_N[-x,]$ATT_FLAG,
+                 k = z)
+    cm5 = table(df_N[x,]$ATT_FLAG, y_pred5)
+    return(f1.Score(cm5))}))
+    ))]
+  
+  pca <- prcomp(df_train[idx])
+  y_pred5 = knn(train = predict(pca, df_train[idx])[,1:3],
+               test = predict(pca, df_test[idx])[,1:3],
+               cl = df_train$ATT_FLAG,
+               k = kOpt)
+  cm5 = table(df_test$ATT_FLAG, y_pred5)
+  print(cm5)
+  print(f1.Score(cm5))
+  
+  # Ensemble Weight optimisation
+  predictions <- data.frame(predict1 = as.numeric(as.character(y_pred1)),
+                            predict3 = y_pred3,
+                            predict4 = as.numeric(as.character(y_pred4)),
+                            predict5 = as.numeric(as.character(y_pred5)),
+                            Actual = df_test$ATT_FLAG)
+  
+  ocl <- glm(data = predictions, family = binomial, weights = NULL, formula = Actual~.)
+  prob_predO <- predict(ocl, newdata = predictions, type = 'response')
+  y_predO <- ifelse(prob_predO > 0.5, 1, 0)
+  cmO = table(predictions$Actual, y_predO)
+  print(cmO)
+  print(f1.Score(cmO))
+  
+  return(list(cl1 = cl1,cl3 = cl3,cl4 = cl4,pca = pca, ocl = ocl,df_train = df_train,idx = idx,vb = vb,KN = kOpt, XGCutOff = optCutOffcl3))
+}
+
+ensemblePredict <- function(model, df_F) {
+  idxF <- which(colnames(df_F) %in% model$vb)
+  # Predictions
+  y_pred1F = predict(model$cl1, newdata = df_F)
+  y_pred3F = ifelse(predict(model$cl3, newdata = as.matrix(df_F[idxF]))  >= model$XGCutOff,1,0)
+  y_pred4F = predict(model$cl4, newdata = df_F[idxF])
+  y_pred5F = knn(train = predict(model$pca, model$df_train[model$idx])[,1:3],
+                 test = predict(model$pca, df_F[idxF])[,1:3],
+                 cl = model$df_train$ATT_FLAG,
+                 k = model$KN)
+  
+  future.predictions <- data.frame(predict1 = as.numeric(as.character(y_pred1F)),
+                                   predict3 = y_pred3F,
+                                   predict4 = as.numeric(as.character(y_pred4F)),
+                                   predict5 = as.numeric(as.character(y_pred5F)))
+  
+  y_predFuture <- ifelse(predict(model$ocl, newdata = future.predictions, type = 'response') > 0.5, 1, 0)
+  
+  print(table(y_pred1F))
+  print(table(y_pred3F))
+  print(table(y_pred4F))
+  print(table(y_pred5F))
+  print(table(y_predFuture))
+  
+  return(y_predFuture)
+}
+```
+
+```{r Train and Predict}
+# Train Network 1 Models
+M1S <- ensembleTrain(df_N1,c("LEVEL_T1","FLOW_PU1","FLOW_PU2","FLOW_PU3","PRESSURE_J269","PRESSURE_J300","PRESSURE_J302","PRESSURE_J14","PRESSURE_J307"))
+M1G <- ensembleTrain(df_N1,c("LEVEL_T1","FLOW_PU2","PRESSURE_J269","PRESSURE_J300"))
+
+# Train Network 2 Models
+M2S <- ensembleTrain(df_N2,c("LEVEL_T4","FLOW_PU6","FLOW_PU7","PRESSURE_J415","PRESSURE_J302","PRESSURE_J289"))
+M2G <- ensembleTrain(df_N2,c("LEVEL_T4","FLOW_PU6","FLOW_PU7","PRESSURE_J415"))
+
+# Train Network 3 Models
+M3G <- ensembleTrain(df_N3,c("LEVEL_T7","FLOW_PU10","FLOW_PU11","PRESSURE_J307","PRESSURE_J317"))
+
+# Make Predictionss
+# Network 1
+table(runmed(ensemblePredict(M2G,df_NullN12),25)) # Reject this model because of too many false positives
+table(runmed(ensemblePredict(M3G,df_NullN13),25)) # Ok
+
+df_futureN11$ATT_FLAG <- runmed(ensemblePredict(M1S,df_futureN11),25)
+df_futureN13$ATT_FLAG <- runmed(ensemblePredict(M3G,df_futureN13),25)
+
+table(df_futureN11$ATT_FLAG)
+
+df_futureN11$OVERALL_ATT <- ifelse(as.numeric(as.character(df_futureN11$ATT_FLAG))
+                                   +as.numeric(as.character(df_futureN13$ATT_FLAG))>0,1,0)
+
+table(df_futureN11$OVERALL_ATT)
+
+# write.csv(df_futureN11,'predictions/predictions1.csv', row.names = F)
+
+# Network 2
+table(runmed(ensemblePredict(M1G,df_NullN21),25)) # Ok
+table(runmed(ensemblePredict(M3G,df_NullN23),25)) # Ok
+
+df_futureN21$ATT_FLAG <- runmed(ensemblePredict(M1G,df_futureN21),25)
+df_futureN22$ATT_FLAG <- runmed(ensemblePredict(M2S,df_futureN22),25)
+df_futureN23$ATT_FLAG <- runmed(ensemblePredict(M3G,df_futureN23),25)
+
+table(df_futureN21$ATT_FLAG)
+table(df_futureN22$ATT_FLAG)
+table(df_futureN23$ATT_FLAG)
+
+df_futureN22$OVERALL_ATT <- ifelse(as.numeric(as.character(df_futureN21$ATT_FLAG))
+                                   +as.numeric(as.character(df_futureN22$ATT_FLAG))
+                                   +as.numeric(as.character(df_futureN23$ATT_FLAG))>0,1,0)
+
+table(df_futureN22$OVERALL_ATT)
+
+# write.csv(df_futureN22,'predictions/predictions2.csv', row.names = F)
+
+# Network 3
+table(runmed(ensemblePredict(M1G,df_NullN31),25)) # Reject model. Too many false positives
+table(runmed(ensemblePredict(M2G,df_NullN32),25)) # Reject model. Too many false positives
+
+df_futureN33$ATT_FLAG <- runmed(ensemblePredict(M3G,df_futureN33),25)
+df_futureN33$OVERALL_ATT <- ifelse(as.numeric(as.character(df_futureN33$ATT_FLAG))>0,1,0)
+table(df_futureN33$OVERALL_ATT)
+
+# write.csv(df_futureN33,'predictions/predictions3.csv', row.names = F)
+```
+
+```{r Process Status Anomalies and Compile Results from all models}
+Status123 <- ifelse(df_future_org$STATUS_PU1 + df_future_org$STATUS_PU2 + df_future_org$STATUS_PU3 > 2,1,0)
+Status45 <- ifelse(df_future_org$STATUS_PU4 + df_future_org$STATUS_PU5 > 1,1,0)
+Status67 <- ifelse(df_future_org$STATUS_PU6 + df_future_org$STATUS_PU7 > 1,1,0)
+Status89 <- ifelse(df_future_org$STATUS_PU8 + df_future_org$STATUS_PU9 > 1,1,0)
+Statu1011 <- ifelse(df_future_org$STATUS_PU10 + df_future_org$STATUS_PU11 > 1,1,0)
+
+df_future_org$StatusAnomaly <- ifelse(Status123 + Status45 + Status67 + Status89 + Statu1011> 0, 1, 0)
+
+annResults <- read.csv('ANNresults.csv') # Import results from autoencoder!! Run python file before running this part
+
+table(df_futureN11$OVERALL_ATT)
+table(df_futureN22$OVERALL_ATT)
+table(df_futureN33$OVERALL_ATT)
+table(df_future_org$StatusAnomaly)
+table(annResults$ATT_FLAG)
+
+df_future_org$ATT_FLAG <- ifelse(df_futureN11$OVERALL_ATT + df_futureN22$OVERALL_ATT + df_futureN33$OVERALL_ATT + df_future_org$StatusAnomaly + annResults$ATT_FLAG> 0, 1, 0)
+
+df_future_org$MATT_FLAG <- runmed(df_future_org$ATT_FLAG,24*4+1)
+table(df_future_org$ATT_FLAG)
+table(df_future_org$MATT_FLAG)
+
+write.csv(df_future_org,'predictions/overallPredictions.csv',row.names = F)
+
+# kaggleSub <- df_future_org %>% dplyr::select(DATETIME, ATT_FLAG = MATT_FLAG)
+# table(kaggleSub$ATT_FLAG)
+# write.csv(kaggleSub,'predictions/Kaggle.csv',row.names = F)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
